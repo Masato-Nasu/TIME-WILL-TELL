@@ -1,0 +1,7 @@
+CONTENT_SECRET=replace-with-a-long-random-secret-at-least-24-characters
+RATE_SALT=replace-with-another-random-secret
+GMAIL_CLIENT_ID=replace-with-google-oauth-client-id
+GMAIL_CLIENT_SECRET=replace-with-google-oauth-client-secret
+LINE_CHANNEL_ACCESS_TOKEN=
+LINE_LOGIN_CHANNEL_ID=
+LINE_LOGIN_CHANNEL_SECRET=
