@@ -16,6 +16,10 @@ export default {
       return renderMessagePage(token, request, env, ctx);
     }
 
+    if (request.method === 'GET' && path.startsWith('/api/attachment/') && url.searchParams.get('inline') === '1') {
+      return renderInlineImage(request, env, ctx);
+    }
+
     if (request.method === 'POST' && path === '/api/message') {
       return createMessageWithReusableLineContacts(request, env, ctx);
     }
@@ -192,9 +196,7 @@ async function renderMessagePage(token, request, env, ctx) {
     return messageHtmlPage('このメッセージを開けませんでした。', response.status || 500);
   }
 
-  const attachment = data.attachment?.url
-    ? `<a class="attachment" href="${escapeHtml(data.attachment.url)}">ATTACHMENT — ${escapeHtml(data.attachment.filename || 'attachment')}</a>`
-    : '';
+  const attachment = renderAttachmentHtml(data.attachment);
   const safeBody = escapeHtml(data.body || '').replace(/\r?\n/g, '<br>');
   const sealed = data.createdAt ? formatDateTokyo(data.createdAt) : '';
 
@@ -206,7 +208,7 @@ async function renderMessagePage(token, request, env, ctx) {
 <meta name="color-scheme" content="light">
 <title>TIME WILL TELL</title>
 <style>
-:root{color-scheme:light}*{box-sizing:border-box}body{margin:0;background:#f4f0e9;color:#151515;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;-webkit-text-size-adjust:100%}.wrap{width:min(720px,100%);margin:0 auto;padding:38px 18px 48px}.title{font-size:clamp(34px,8vw,54px);letter-spacing:.12em;font-weight:600;margin:0 0 28px}.card{background:#fffdfa;border:1px solid #d8d0c5;border-radius:28px;padding:30px 22px;box-shadow:0 8px 28px rgba(0,0,0,.03)}.meta{font-size:12px;letter-spacing:.16em;color:#666;margin-bottom:8px}.sender{font-size:18px;font-weight:600;margin:0 0 6px}.sealed{font-size:12px;letter-spacing:.12em;color:#777;margin:0 0 28px}.message{font-size:18px;line-height:1.9;overflow-wrap:anywhere;word-break:break-word}.attachment{display:inline-block;margin-top:28px;color:#151515;text-decoration:none;border:1px solid #151515;border-radius:999px;padding:12px 16px;font-size:13px;letter-spacing:.08em}.foot{margin-top:24px;font-size:11px;letter-spacing:.12em;color:#8a847c}@media(max-width:480px){.wrap{padding-top:28px}.card{padding:26px 20px}.message{font-size:17px}}
+:root{color-scheme:light}*{box-sizing:border-box}body{margin:0;background:#f4f0e9;color:#151515;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;-webkit-text-size-adjust:100%}.wrap{width:min(720px,100%);margin:0 auto;padding:38px 18px 48px}.title{font-size:clamp(34px,8vw,54px);letter-spacing:.12em;font-weight:600;margin:0 0 28px}.card{background:#fffdfa;border:1px solid #d8d0c5;border-radius:28px;padding:30px 22px;box-shadow:0 8px 28px rgba(0,0,0,.03)}.meta{font-size:12px;letter-spacing:.16em;color:#666;margin-bottom:8px}.sender{font-size:18px;font-weight:600;margin:0 0 6px}.sealed{font-size:12px;letter-spacing:.12em;color:#777;margin:0 0 28px}.message{font-size:18px;line-height:1.9;overflow-wrap:anywhere;word-break:break-word}.attachment-area{margin-top:28px}.attachment-image{display:block;width:100%;height:auto;max-height:70vh;object-fit:contain;border-radius:18px;background:#eee8df}.attachment-name{margin-top:12px;font-size:11px;font-weight:700;letter-spacing:.09em;color:#777;overflow-wrap:anywhere}.attachment-download{margin-top:12px;color:#151515;background:transparent;border:1px solid #151515;border-radius:999px;padding:12px 16px;font:inherit;font-size:13px;font-weight:700;letter-spacing:.08em}.attachment-download.downloaded{border-color:#777;color:#666}.attachment-download:disabled{opacity:.72}.foot{margin-top:24px;font-size:11px;letter-spacing:.12em;color:#8a847c}@media(max-width:480px){.wrap{padding-top:28px}.card{padding:26px 20px}.message{font-size:17px}}
 </style>
 </head>
 <body>
@@ -221,6 +223,36 @@ ${attachment}
 </section>
 <div class="foot">TIME ITSELF IS THE KEY.</div>
 </main>
+<script>
+(function(){
+  document.querySelectorAll('[data-download-url]').forEach(function(button){
+    button.addEventListener('click', async function(){
+      var original = button.textContent;
+      button.disabled = true;
+      button.textContent = 'DOWNLOADING…';
+      try {
+        var res = await fetch(button.dataset.downloadUrl, {credentials:'same-origin', cache:'no-store'});
+        if (!res.ok) throw new Error('download_failed');
+        var blob = await res.blob();
+        var objectUrl = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = objectUrl;
+        a.download = button.dataset.downloadName || 'attachment';
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(function(){ URL.revokeObjectURL(objectUrl); }, 2000);
+        button.textContent = 'DOWNLOADED ✓';
+        button.classList.add('downloaded');
+      } catch (e) {
+        button.disabled = false;
+        button.textContent = original;
+      }
+    });
+  });
+})();
+</script>
 </body>
 </html>`;
 
@@ -233,6 +265,40 @@ ${attachment}
       'Referrer-Policy': 'no-referrer'
     }
   });
+}
+
+
+async function renderInlineImage(request, env, ctx) {
+  const response = await legacyWorker.fetch(request, env, ctx);
+  if (!response.ok) return response;
+  const contentType = String(response.headers.get('Content-Type') || '').split(';')[0].trim().toLowerCase();
+  if (!isInlineImageType(contentType)) return response;
+  const headers = new Headers(response.headers);
+  headers.set('Content-Disposition', 'inline');
+  headers.set('Cache-Control', 'private, no-store, max-age=0');
+  headers.set('X-Content-Type-Options', 'nosniff');
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers
+  });
+}
+
+function isInlineImageType(contentType) {
+  const type = String(contentType || '').split(';')[0].trim().toLowerCase();
+  return ['image/jpeg','image/png','image/gif','image/webp','image/avif','image/heic','image/heif'].includes(type);
+}
+
+function renderAttachmentHtml(attachment) {
+  if (!attachment?.url) return '';
+  const filename = attachment.filename || 'attachment';
+  const safeUrl = escapeHtml(attachment.url);
+  const safeFilename = escapeHtml(filename);
+  const image = isInlineImageType(attachment.contentType);
+  const imageHtml = image
+    ? `<img class="attachment-image" src="${safeUrl}${String(attachment.url).includes('?') ? '&amp;' : '?'}inline=1" alt="${safeFilename}">`
+    : '';
+  return `<div class="attachment-area">${imageHtml}<div class="attachment-name">ATTACHMENT — ${safeFilename}</div><button class="attachment-download" type="button" data-download-url="${safeUrl}" data-download-name="${safeFilename}">${image ? 'DOWNLOAD IMAGE' : 'DOWNLOAD FILE'}</button></div>`;
 }
 
 function connectTokenFromUrl(value) {
