@@ -104,7 +104,11 @@
         <div id="messageSender" class="message-sender"></div>
         <div id="messageSealed" class="message-sealed"></div>
         <div id="messageBody" class="message-body"></div>
-        <a id="attachmentLink" class="attachment-link" hidden>ATTACHMENT</a>
+        <div id="attachmentArea" class="attachment-area" hidden>
+          <img id="attachmentImage" class="attachment-image" alt="" hidden>
+          <div id="attachmentName" class="attachment-name"></div>
+          <button id="attachmentDownload" class="attachment-download" type="button" hidden>DOWNLOAD</button>
+        </div>
       </div>
     </section>
 
@@ -115,7 +119,7 @@
       <button id="triggerButton" class="primary" type="button">TRIGGER</button>
       <p id="triggerError" class="error"></p>
     </section>
-    <div class="app-version">v0.1.9</div>
+    <div class="app-version">v0.1.10</div>
   </main>
 
   <template id="recipientTemplate">
