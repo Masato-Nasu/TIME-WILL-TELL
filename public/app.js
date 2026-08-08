@@ -2,6 +2,50 @@ const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
 let currentMode = 'date';
 
+const LINE_CONTACTS_KEY = 'timeWillTellLineContactsV1';
+
+function loadLineContacts() {
+  try {
+    const value = JSON.parse(localStorage.getItem(LINE_CONTACTS_KEY) || '[]');
+    return Array.isArray(value)
+      ? value.filter(x => x && x.contactToken && x.label).slice(0, 50)
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveLineContact(item) {
+  if (!item?.contactToken || !item?.label) return;
+  try {
+    const contacts = loadLineContacts().filter(x => x.contactToken !== item.contactToken);
+    contacts.unshift({ label: String(item.label).slice(0, 100), contactToken: item.contactToken });
+    localStorage.setItem(LINE_CONTACTS_KEY, JSON.stringify(contacts.slice(0, 50)));
+  } catch {
+    // The message still works even if this browser blocks local storage.
+  }
+}
+
+function fillLineContactSelect(select, selectedToken = '') {
+  const contacts = loadLineContacts();
+  select.innerHTML = '';
+  const choose = document.createElement('option');
+  choose.value = '';
+  choose.textContent = contacts.length ? '保存済みLINE受取人を選択' : '保存済みLINE受取人はまだありません';
+  select.appendChild(choose);
+  contacts.forEach(contact => {
+    const option = document.createElement('option');
+    option.value = contact.contactToken;
+    option.textContent = contact.label;
+    select.appendChild(option);
+  });
+  const fresh = document.createElement('option');
+  fresh.value = '__new__';
+  fresh.textContent = '＋ 新しいLINE受取人を登録';
+  select.appendChild(fresh);
+  select.value = selectedToken && contacts.some(x => x.contactToken === selectedToken) ? selectedToken : '';
+}
+
 const composeView = $('#composeView');
 const doneView = $('#doneView');
 const openView = $('#openView');
@@ -35,6 +79,8 @@ function addRecipient(channel = 'email') {
 
   const node = $('#recipientTemplate').content.firstElementChild.cloneNode(true);
   const input = node.querySelector('.recipient-value');
+  const lineSelect = node.querySelector('.recipient-line-contact');
+  const contactTokenInput = node.querySelector('.recipient-contact-token');
   const channelValue = node.querySelector('.recipient-channel-value');
   const channelButtons = [...node.querySelectorAll('.recipient-channel-button')];
 
@@ -45,8 +91,29 @@ function addRecipient(channel = 'email') {
       button.classList.toggle('active', active);
       button.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
-    updateRecipientInput(nextChannel, input);
+    updateRecipientInput(nextChannel, input, lineSelect, contactTokenInput);
   }
+
+  lineSelect.addEventListener('change', () => {
+    const token = lineSelect.value;
+    if (token === '__new__') {
+      contactTokenInput.value = '';
+      input.hidden = false;
+      input.value = '';
+      input.focus();
+      return;
+    }
+    if (token) {
+      const contact = loadLineContacts().find(x => x.contactToken === token);
+      contactTokenInput.value = token;
+      input.value = contact?.label || '';
+      input.hidden = true;
+      return;
+    }
+    contactTokenInput.value = '';
+    input.value = '';
+    input.hidden = loadLineContacts().length > 0;
+  });
 
   channelButtons.forEach(button => {
     button.addEventListener('click', () => setRecipientChannel(button.dataset.channel));
@@ -64,9 +131,12 @@ function addRecipient(channel = 'email') {
   updateRecipientCount();
 }
 
-function updateRecipientInput(channel, input) {
+function updateRecipientInput(channel, input, lineSelect, contactTokenInput) {
   input.value = '';
+  contactTokenInput.value = '';
   if (channel === 'email') {
+    input.hidden = false;
+    lineSelect.hidden = true;
     input.type = 'email';
     input.inputMode = 'email';
     input.autocomplete = 'email';
@@ -76,8 +146,11 @@ function updateRecipientInput(channel, input) {
     input.type = 'text';
     input.inputMode = 'text';
     input.autocomplete = 'name';
-    input.placeholder = 'LINE受取人の名前';
+    input.placeholder = '新しいLINE受取人の名前';
     input.setAttribute('aria-label', 'LINE受取人の名前');
+    fillLineContactSelect(lineSelect);
+    lineSelect.hidden = false;
+    input.hidden = loadLineContacts().length > 0;
   }
 }
 
@@ -89,8 +162,10 @@ function collectRecipients() {
   return [...$('#recipients').children].map(row => {
     const channel = row.querySelector('.recipient-channel-value').value;
     const value = row.querySelector('.recipient-value').value.trim();
-    return channel === 'email'
-      ? { channel, address: value }
+    if (channel === 'email') return { channel, address: value };
+    const contactToken = row.querySelector('.recipient-contact-token').value.trim();
+    return contactToken
+      ? { channel, label: value, contactToken }
       : { channel, label: value };
   });
 }
@@ -105,7 +180,9 @@ $('#messageForm').addEventListener('submit', async (e) => {
 
   try {
     const recipients = collectRecipients();
-    if (recipients.some(r => (r.channel === 'email' ? !r.address : !r.label))) throw new Error('送り先を入力してください。');
+    if (recipients.some(r => (r.channel === 'email' ? !r.address : !r.label))) {
+      throw new Error('送り先を入力してください。LINEは保存済み受取人を選ぶか、新しい受取人名を入力してください。');
+    }
 
     const fd = new FormData();
     fd.set('senderName', $('#senderName').value.trim());
@@ -155,9 +232,10 @@ function showDone(data) {
   if (data.lineConnections?.length) {
     lineSetup.hidden = false;
     data.lineConnections.forEach((item, i) => {
+      saveLineContact(item);
       const id = `lineLink${i}`;
       const wrapper = document.createElement('div');
-      wrapper.innerHTML = `<div class="muted">${escapeText(item.label)}</div><div class="copy-row"><input id="${id}" readonly><button class="copy-button" type="button" data-id="${id}">COPY</button></div>`;
+      wrapper.innerHTML = `<div class="muted"><strong>${escapeText(item.label)}</strong> — 初回だけこのリンクを受取人へ送ってください。登録後は次回から自動送信できます。</div><div class="copy-row"><input id="${id}" readonly><button class="copy-button" type="button" data-id="${id}">COPY</button></div>`;
       wrapper.querySelector('input').value = item.connectUrl;
       wrapper.querySelector('button').addEventListener('click', () => copyInput(id));
       lineLinks.appendChild(wrapper);
@@ -188,6 +266,7 @@ function apiError(data) {
     invalid_condition: 'WHENの条件を入力してください。',
     invalid_email: 'Gmail / メールアドレスを確認してください。',
     line_label_required: 'LINE受取人の名前を入力してください。',
+    invalid_line_contact: '保存済みLINE受取人が無効です。新しく登録し直してください。',
     attachment_too_large: '添付は10MBまでです。',
     server_not_configured: 'サーバー設定が完了していません。'
   };
