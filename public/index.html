@@ -82,8 +82,8 @@
       <h2>保存しました</h2>
       <p id="doneSummary"></p>
       <div id="lineSetup" hidden>
-        <h3>LINE受取人の事前登録</h3>
-        <p class="muted">LINEで未来に自動送信するには、受取人が一度だけLINE連携を完了する必要があります。本文はこの時点では届きません。</p>
+        <h3>LINE受取人の初回登録</h3>
+        <p class="muted">初めての受取人だけ、一度LINE連携が必要です。この端末に保存され、次回からは事前リンクなしで指定日時に自動送信できます。本文はこの時点では届きません。</p>
         <div id="lineLinks"></div>
       </div>
       <div id="triggerSetup" hidden>
@@ -115,7 +115,7 @@
       <button id="triggerButton" class="primary" type="button">TRIGGER</button>
       <p id="triggerError" class="error"></p>
     </section>
-    <div class="app-version">v0.1.7</div>
+    <div class="app-version">v0.1.9</div>
   </main>
 
   <template id="recipientTemplate">
@@ -125,8 +125,10 @@
         <button class="recipient-channel-button" type="button" data-channel="line">LINE</button>
       </div>
       <input class="recipient-value" type="email" placeholder="name@gmail.com" aria-label="送り先">
+      <select class="recipient-line-contact" hidden aria-label="保存済みLINE受取人"></select>
       <button class="remove-recipient" type="button" aria-label="削除">×</button>
       <input class="recipient-channel-value" type="hidden" value="email">
+      <input class="recipient-contact-token" type="hidden" value="">
     </div>
   </template>
 
