@@ -299,17 +299,83 @@ async function loadMessage(token) {
     $('#messageSender').textContent = data.senderName ? `FROM — ${data.senderName}` : '';
     $('#messageSealed').textContent = data.createdAt ? `SEALED — ${formatSealedDate(data.createdAt)}` : '';
     $('#messageBody').textContent = data.body;
-    if (data.attachment) {
-      const link = $('#attachmentLink');
-      link.hidden = false;
-      link.href = data.attachment.url;
-      link.textContent = `ATTACHMENT — ${data.attachment.filename}`;
-    }
+    renderAttachment(data.attachment);
   } catch {
     $('#notYet').hidden = false;
     $('#notYetText').textContent = 'メッセージを開けませんでした。';
   }
 }
+
+function isInlineImageType(contentType) {
+  const type = String(contentType || '').split(';')[0].trim().toLowerCase();
+  return ['image/jpeg','image/png','image/gif','image/webp','image/avif','image/heic','image/heif'].includes(type);
+}
+
+function renderAttachment(attachment) {
+  const area = $('#attachmentArea');
+  const image = $('#attachmentImage');
+  const name = $('#attachmentName');
+  const button = $('#attachmentDownload');
+
+  area.hidden = true;
+  image.hidden = true;
+  image.removeAttribute('src');
+  name.textContent = '';
+  button.hidden = true;
+  button.disabled = false;
+  button.classList.remove('downloaded');
+  button.textContent = 'DOWNLOAD';
+  button.dataset.url = '';
+  button.dataset.filename = '';
+
+  if (!attachment?.url) return;
+
+  const filename = attachment.filename || 'attachment';
+  const isImage = isInlineImageType(attachment.contentType);
+  area.hidden = false;
+  name.textContent = `ATTACHMENT — ${filename}`;
+  button.hidden = false;
+  button.dataset.url = attachment.url;
+  button.dataset.filename = filename;
+  button.textContent = isImage ? 'DOWNLOAD IMAGE' : 'DOWNLOAD FILE';
+
+  if (isImage) {
+    image.alt = filename;
+    image.src = `${attachment.url}${attachment.url.includes('?') ? '&' : '?'}inline=1`;
+    image.hidden = false;
+  }
+}
+
+async function downloadAttachment(button) {
+  const url = button.dataset.url;
+  if (!url) return;
+  const filename = button.dataset.filename || 'attachment';
+  const idleText = button.textContent;
+  button.disabled = true;
+  button.textContent = 'DOWNLOADING…';
+
+  try {
+    const res = await fetch(url, { credentials: 'same-origin', cache: 'no-store' });
+    if (!res.ok) throw new Error('download_failed');
+    const blob = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = objectUrl;
+    a.download = filename;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 2000);
+    button.textContent = 'DOWNLOADED ✓';
+    button.classList.add('downloaded');
+  } catch {
+    button.disabled = false;
+    button.textContent = idleText;
+  }
+}
+
+$('#attachmentDownload').addEventListener('click', (e) => downloadAttachment(e.currentTarget));
 
 async function loadTrigger(token) {
   setOnly(triggerView);
