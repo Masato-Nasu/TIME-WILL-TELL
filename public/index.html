@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f4f0e9">
+  <title>TIME WILL TELL</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="brand"><h1>TIME WILL TELL</h1></header>
+
+    <section id="composeView" class="panel">
+      <div class="mode-switch" role="tablist" aria-label="送信方法">
+        <button class="mode active" data-mode="date" type="button">DATE</button>
+        <button class="mode" data-mode="when" type="button">WHEN</button>
+      </div>
+
+      <form id="messageForm">
+        <label class="field">
+          <span>FROM</span>
+          <input id="senderName" maxlength="100" required placeholder="受信者に表示する送信者名">
+          <small>この名前がGmail / LINEとメッセージ画面に表示されます。</small>
+        </label>
+
+        <label class="field">
+          <span>MESSAGE</span>
+          <textarea id="body" maxlength="10000" required placeholder="未来に届けるメッセージ"></textarea>
+        </label>
+
+        <label class="field file-field">
+          <span>ATTACH</span>
+          <input id="attachment" type="file">
+          <small>添付は1点・最大10MB</small>
+        </label>
+
+        <div id="dateFields">
+          <label class="field">
+            <span>SEND ON</span>
+            <input id="sendAt" type="datetime-local">
+          </label>
+        </div>
+
+        <div id="whenFields" hidden>
+          <label class="field">
+            <span>WHEN...</span>
+            <input id="condition" maxlength="500" placeholder="例：あなたが結婚したら">
+          </label>
+          <label class="field">
+            <span>WHO CAN TRIGGER?</span>
+            <select id="triggerOwner">
+              <option value="sender">送信者</option>
+              <option value="recipient">受取人</option>
+              <option value="trusted">指定した人</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="recipients-block">
+          <div class="section-head">
+            <span>TO</span>
+            <span id="recipientCount" class="recipient-count">1 / 10</span>
+          </div>
+          <div id="recipients"></div>
+          <div class="recipient-actions">
+            <button id="addEmailRecipient" class="text-button add-recipient" type="button">＋ GMAIL</button>
+            <button id="addLineRecipient" class="text-button add-recipient" type="button">＋ LINE</button>
+          </div>
+          <small>送り先は最大10件。Gmail / メールとLINEを混在できます。</small>
+        </div>
+
+        <button id="sealButton" class="primary" type="submit">SEAL</button>
+        <p id="formError" class="error" role="alert"></p>
+      </form>
+    </section>
+
+    <section id="doneView" class="panel" hidden>
+      <div class="seal-mark">SEALED</div>
+      <h2>保存しました</h2>
+      <p id="doneSummary"></p>
+      <div id="lineSetup" hidden>
+        <h3>LINE受取人の事前登録</h3>
+        <p class="muted">LINEで未来に自動送信するには、受取人が一度だけLINE連携を完了する必要があります。本文はこの時点では届きません。</p>
+        <div id="lineLinks"></div>
+      </div>
+      <div id="triggerSetup" hidden>
+        <h3>TRIGGER LINK</h3>
+        <p class="muted">WHENの条件が成立した人が使う秘密のリンクです。必要な人だけに保管・共有してください。</p>
+        <div class="copy-row"><input id="triggerUrl" readonly><button class="copy-button" data-copy="triggerUrl" type="button">COPY</button></div>
+      </div>
+      <button id="newMessage" class="secondary" type="button">NEW MESSAGE</button>
+    </section>
+
+    <section id="openView" class="panel message-panel" hidden>
+      <div id="notYet" hidden>
+        <div class="seal-mark">NOT YET</div>
+        <p id="notYetText"></p>
+      </div>
+      <div id="opened" hidden>
+        <div class="seal-mark open">OPEN</div>
+        <div id="messageSender" class="message-sender"></div>
+        <div id="messageSealed" class="message-sealed"></div>
+        <div id="messageBody" class="message-body"></div>
+        <a id="attachmentLink" class="attachment-link" hidden>ATTACHMENT</a>
+      </div>
+    </section>
+
+    <section id="triggerView" class="panel" hidden>
+      <div class="seal-mark">WHEN</div>
+      <h2 id="triggerCondition"></h2>
+      <p id="triggerStatus" class="muted"></p>
+      <button id="triggerButton" class="primary" type="button">TRIGGER</button>
+      <p id="triggerError" class="error"></p>
+    </section>
+    <div class="app-version">v0.1.7</div>
+  </main>
+
+  <template id="recipientTemplate">
+    <div class="recipient-row">
+      <div class="recipient-channel-switch" role="group" aria-label="送信方法">
+        <button class="recipient-channel-button active" type="button" data-channel="email">GMAIL</button>
+        <button class="recipient-channel-button" type="button" data-channel="line">LINE</button>
+      </div>
+      <input class="recipient-value" type="email" placeholder="name@gmail.com" aria-label="送り先">
+      <button class="remove-recipient" type="button" aria-label="削除">×</button>
+      <input class="recipient-channel-value" type="hidden" value="email">
+    </div>
+  </template>
+
+  <script src="/app.js" defer></script>
+</body>
+</html>
