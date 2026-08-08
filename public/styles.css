@@ -57,7 +57,7 @@ h2{font-size:26px;line-height:1.35;margin:0 0 14px}h3{margin:30px 0 8px;font-siz
 .message-sender{font-size:12px;font-weight:850;letter-spacing:.12em;color:var(--muted);margin:0 0 18px}
 .message-sealed{font-size:11px;font-weight:750;letter-spacing:.12em;color:var(--muted);margin:-8px 0 22px}
 .message-body{white-space:pre-wrap;font-size:18px;line-height:1.9;word-break:break-word}
-.attachment-link{display:inline-block;margin-top:28px;border:1px solid var(--ink);border-radius:999px;padding:11px 15px;color:var(--ink);text-decoration:none;font-weight:800;letter-spacing:.08em}
+.attachment-area{margin-top:28px}.attachment-image{display:block;width:100%;height:auto;max-height:70vh;object-fit:contain;border-radius:18px;background:#eee8df}.attachment-name{margin-top:12px;font-size:11px;font-weight:750;letter-spacing:.09em;color:var(--muted);overflow-wrap:anywhere}.attachment-download{margin-top:12px;border:1px solid var(--ink);border-radius:999px;padding:11px 15px;background:transparent;color:var(--ink);font:inherit;font-size:12px;font-weight:800;letter-spacing:.08em;cursor:pointer}.attachment-download.downloaded{border-color:#7b766e;color:#68635c}.attachment-download:disabled{cursor:default;opacity:.72}
 @media(max-width:520px){.panel{border-radius:22px;padding:17px}.recipient-row{grid-template-columns:1fr 38px}.recipient-channel-switch{grid-column:1 / -1}.shell{padding-left:12px;padding-right:12px}}
 
 .recipient-line-contact{border-radius:13px;padding:12px;min-width:0}
