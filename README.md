@@ -14,7 +14,7 @@ Write now. Open later.
 - **WHEN** — release a message when a chosen condition is fulfilled and its trigger is activated.
 - **FROM** — set the sender name shown to the recipient.
 - **MESSAGE** — write the message to be delivered in the future.
-- **ATTACH** — attach one file up to 10 MB.
+- **ATTACH** — attach one file up to 10 MB. Image attachments are shown directly in the opened message.
 - **TO** — add Gmail/email and LINE recipients in the same message, up to 10 recipients total.
 - **SEAL** — lock the message into its delivery rule.
 
@@ -28,14 +28,15 @@ SEALED — YYYY.MM.DD
 
 ## Current version
 
-**v0.1.9**
+**v0.1.10**
 
-### v0.1.9
+### v0.1.10
 
-- LINE recipients are reusable after the first connection.
-- A first-time LINE recipient receives one connection link. After that, the sender can choose the saved recipient and schedule future LINE delivery without sending another pre-registration link.
-- The sender browser stores only an opaque contact token for saved LINE recipients; the LINE user ID is not exposed to the browser.
-- Added an iPhone-safe `/m/TOKEN` message route that renders the opened message on the server, so reading the message does not depend on client-side JavaScript.
+- Image attachments are displayed inline in the opened-message view instead of forcing a download.
+- Images still have a **DOWNLOAD IMAGE** button; other files use **DOWNLOAD FILE**.
+- After the browser successfully starts a download, the button changes to **DOWNLOADED ✓**.
+- The same attachment behavior is used by the iPhone-safe server-rendered `/m/TOKEN` message page.
+- Reusable LINE recipients from v0.1.9 remain supported: after the first LINE connection, future scheduled messages can be sent without another pre-registration link.
 - Gmail delivery uses the Gmail API with a dedicated sender account.
 - Gmail OAuth requests `gmail.send` for mailbox access; it does not request Gmail read access.
 - LINE delivery uses LINE Messaging API + LINE Login.
@@ -56,6 +57,12 @@ For a new LINE recipient:
 After that first connection, the recipient appears in the sender browser as a saved LINE recipient. Future messages can simply select that recipient and **SEAL**; TIME WILL TELL sends the LINE message automatically when the scheduled time arrives.
 
 Saved-recipient selection is stored in that browser. Clearing site data or switching browsers/devices removes the local saved list, although the server-side LINE connection remains registered.
+
+## Attachment behavior
+
+Supported image types such as JPEG, PNG, GIF, WebP, AVIF, HEIC, and HEIF are rendered inside the message page. The original file can still be downloaded explicitly.
+
+The **DOWNLOADED ✓** state means the browser successfully fetched the attachment and started the client-side save/download action. A web page cannot reliably confirm the final filesystem destination or OS-level save completion.
 
 ## Architecture
 
