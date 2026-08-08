@@ -28,11 +28,14 @@ SEALED — YYYY.MM.DD
 
 ## Current version
 
-**v0.1.7**
+**v0.1.9**
 
-### v0.1.7
+### v0.1.9
 
-- Added `SEALED — YYYY.MM.DD` to the opened-message view.
+- LINE recipients are reusable after the first connection.
+- A first-time LINE recipient receives one connection link. After that, the sender can choose the saved recipient and schedule future LINE delivery without sending another pre-registration link.
+- The sender browser stores only an opaque contact token for saved LINE recipients; the LINE user ID is not exposed to the browser.
+- Added an iPhone-safe `/m/TOKEN` message route that renders the opened message on the server, so reading the message does not depend on client-side JavaScript.
 - Gmail delivery uses the Gmail API with a dedicated sender account.
 - Gmail OAuth requests `gmail.send` for mailbox access; it does not request Gmail read access.
 - LINE delivery uses LINE Messaging API + LINE Login.
@@ -41,10 +44,23 @@ SEALED — YYYY.MM.DD
 - One attachment up to 10 MB.
 - PWA support.
 
+## LINE delivery flow
+
+For a new LINE recipient:
+
+1. Create the message and choose **LINE**.
+2. Enter the recipient name and **SEAL**.
+3. Send the generated LINE connection link to that person once.
+4. The recipient completes LINE Login / friend connection.
+
+After that first connection, the recipient appears in the sender browser as a saved LINE recipient. Future messages can simply select that recipient and **SEAL**; TIME WILL TELL sends the LINE message automatically when the scheduled time arrives.
+
+Saved-recipient selection is stored in that browser. Clearing site data or switching browsers/devices removes the local saved list, although the server-side LINE connection remains registered.
+
 ## Architecture
 
 - **Cloudflare Workers** — application/API runtime
-- **Cloudflare D1** — encrypted message metadata and recipient state
+- **Cloudflare D1** — encrypted message metadata, recipient state, and reusable LINE contact mapping
 - **Cloudflare R2** — encrypted attachments
 - **Cloudflare Cron Triggers** — scheduled release/delivery checks
 - **Gmail API** — email delivery
@@ -57,7 +73,8 @@ Message bodies, sender names, conditions, OAuth refresh-token data and attachmen
 ```text
 TIME-WILL-TELL/
 ├─ src/
-│  └─ worker.js
+│  ├─ worker.js
+│  └─ entry-v019.js
 ├─ public/
 │  ├─ index.html
 │  ├─ app.js
@@ -68,7 +85,7 @@ TIME-WILL-TELL/
 ├─ migrations/
 │  ├─ 0001_init.sql
 │  ├─ 0002_sender_name.sql
-│  └─ 0003_app_settings.sql
+│  └─ 0004_reusable_line_contacts.sql
 ├─ assets/
 │  └─ screenshot1.png
 ├─ wrangler.jsonc
