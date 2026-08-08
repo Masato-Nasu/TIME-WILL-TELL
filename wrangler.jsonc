@@ -1,0 +1,36 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "time-will-tell",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-08-01",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "time-will-tell-db",
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "ATTACHMENTS",
+      "bucket_name": "time-will-tell-attachments"
+    }
+  ],
+  "triggers": {
+    "crons": ["* * * * *"]
+  },
+  "vars": {
+    "APP_BASE_URL": "https://REPLACE_WITH_YOUR_DOMAIN",
+    "GMAIL_SENDER_ACCOUNT": "timewilltellappjp@gmail.com",
+    "RATE_LIMIT_PER_HOUR": "30",
+    "LINE_BOT_ADD_URL": ""
+  },
+  "observability": {
+    "enabled": true
+  }
+}
