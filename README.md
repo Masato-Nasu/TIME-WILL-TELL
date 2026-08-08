@@ -4,7 +4,7 @@
 
 TIME WILL TELL is a small web app for writing a message now and making it readable later. The message is sealed until a specified date/time, or released when a chosen condition is triggered.
 
-![TIME WILL TELL](assets/screenshot.png)
+![TIME WILL TELL](assets/screenshot.svg)
 
 ## Concept
 
@@ -59,7 +59,7 @@ TIME-WILL-TELL/
 │  ├─ 0002_sender_name.sql
 │  └─ 0003_app_settings.sql
 ├─ assets/
-│  └─ screenshot.png
+│  └─ screenshot.svg
 ├─ wrangler.jsonc
 ├─ package.json
 └─ DEPLOY_JA.md
