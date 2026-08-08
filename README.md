@@ -2,19 +2,29 @@
 
 **A message sealed by time.**
 
-TIME WILL TELL is a small web app for writing a message now and making it readable later. The message is sealed until a specified date/time, or released when a chosen condition is triggered.
+TIME WILL TELL is a web app for writing a message now and making it readable later. Time itself acts as the key: a message stays sealed until its scheduled moment arrives, or until a chosen condition is triggered.
 
-![TIME WILL TELL](assets/screenshot.svg)
+![TIME WILL TELL](assets/screenshot1.png)
 
 ## Concept
 
-Time itself is the key.
+Write now. Open later.
 
-- **DATE** — seal a message until a specified date and time.
-- **WHEN** — seal a message until a condition is fulfilled and its trigger is activated.
-- Recipients do not need to install the app. They receive a browser link.
-- Gmail/email and LINE recipients can be mixed in one message.
-- The opened message shows the sender name and the date it was sealed: `SEALED — YYYY.MM.DD`.
+- **DATE** — choose an exact date and time for delivery.
+- **WHEN** — release a message when a chosen condition is fulfilled and its trigger is activated.
+- **FROM** — set the sender name shown to the recipient.
+- **MESSAGE** — write the message to be delivered in the future.
+- **ATTACH** — attach one file up to 10 MB.
+- **TO** — add Gmail/email and LINE recipients in the same message, up to 10 recipients total.
+- **SEAL** — lock the message into its delivery rule.
+
+Recipients do not need to install the app. They receive a browser link, email, or LINE delivery depending on the selected destination.
+
+When a sealed message is opened, the message view shows the sender name and the date it was sealed:
+
+```text
+SEALED — YYYY.MM.DD
+```
 
 ## Current version
 
@@ -26,6 +36,7 @@ Time itself is the key.
 - Gmail delivery uses the Gmail API with a dedicated sender account.
 - Gmail OAuth requests `gmail.send` for mailbox access; it does not request Gmail read access.
 - LINE delivery uses LINE Messaging API + LINE Login.
+- Gmail/email and LINE recipients can be mixed in one message.
 - Up to 10 recipients per message.
 - One attachment up to 10 MB.
 - PWA support.
@@ -59,7 +70,7 @@ TIME-WILL-TELL/
 │  ├─ 0002_sender_name.sql
 │  └─ 0003_app_settings.sql
 ├─ assets/
-│  └─ screenshot.svg
+│  └─ screenshot1.png
 ├─ wrangler.jsonc
 ├─ package.json
 └─ DEPLOY_JA.md
